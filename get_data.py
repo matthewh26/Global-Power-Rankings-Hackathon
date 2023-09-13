@@ -247,7 +247,7 @@ def download_games(year, df):
                                 #download_gzip_and_write_to_json(f"games/{platform_game_id}",f"{directory}/{platform_game_id}")
                                 
                                 blue_team_id = str(game["teams"][0]["id"])
-                                red_team_id = str(game["teams"][0]["id"])
+                                red_team_id = str(game["teams"][1]["id"])
                                 #print(blue_team_id)
                                 #print(red_team_id)
                                 game_data = pd.DataFrame()
