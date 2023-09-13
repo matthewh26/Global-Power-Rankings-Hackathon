@@ -245,27 +245,31 @@ def download_games(year, df):
                                     continue
                                 print(platform_game_id)
                                 #download_gzip_and_write_to_json(f"games/{platform_game_id}",f"{directory}/{platform_game_id}")
+                                try:
+                                    blue_team_id = str(game["teams"][0]["id"])
+                                    red_team_id = str(game["teams"][1]["id"])
+                                    #print(blue_team_id)
+                                    #print(red_team_id)
+                                    game_data = pd.DataFrame()
+                                    game_data["blue_team"]= [blue_team_id]
+                                    game_data["red_team"]= [red_team_id]
+                                    #print(game_data["blue_team"])
+                                    match_json = download_gzip_and_parse_json(f"games/{platform_game_id}")
+                                    game_data = get_game_info(game_data, match_json,tournament_slug,stage_name, league_id)
                                 
-                                blue_team_id = str(game["teams"][0]["id"])
-                                red_team_id = str(game["teams"][1]["id"])
-                                #print(blue_team_id)
-                                #print(red_team_id)
-                                game_data = pd.DataFrame()
-                                game_data["blue_team"]= [blue_team_id]
-                                game_data["red_team"]= [red_team_id]
-                                #print(game_data["blue_team"])
-                                match_json = download_gzip_and_parse_json(f"games/{platform_game_id}")
-                                game_data = get_game_info(game_data, match_json,tournament_slug,stage_name, league_id)
-                                
-                                game_data["best_of"] =best_of
-                                game_data["tournament"] = tournament_slug
-                                game_data= get_status_updates(match_json,game_data)
-                                #df =pd.concat([df,game_data])
-                                #df = df.reset_index(drop=True)
-                                #print(game_data.columns)
-                                #game_data.to_csv(f"game_data.csv",index=False)
-                                df = pd.concat([df, game_data], axis=0, ignore_index=True)
-                                game_counter += 1
+                                    game_data["best_of"] =best_of
+                                    game_data["tournament"] = tournament_slug
+                                    game_data= get_status_updates(match_json,game_data)
+                                    #df =pd.concat([df,game_data])
+                                    #df = df.reset_index(drop=True)
+                                    #print(game_data.columns)
+                                    #game_data.to_csv(f"game_data.csv",index=False)
+                                    df = pd.concat([df, game_data], axis=0, ignore_index=True)
+                                    game_counter += 1
+                                except ValueError as e:
+                                    print(e)
+                                    print("skipping game ")
+                                    continue
 
                                 if game_counter % 10 == 0:
                                     print(
