@@ -273,14 +273,14 @@ def download_games(year, df):
                                         f"{round((time.time() - start_time)/60, 2)} minutes")
         
         df.to_csv(f"tournaments/{tournament['slug']}.csv",index=False)
-        with open('tournaments/league_names.json', 'w') as f:
+        with open('league_names.json', 'w') as f:
             json.dump(league_names, f)                            
         print(f"Completed {tournament['slug']}")
         
 if __name__ == "__main__":
     while True:
         try:
-            if os.path.isfile("tournaments/league_names.json"):
+            if os.path.isfile("league_names.json"):
                 with open('league_names.json', 'r') as f:
                     league_names= json.load(f)
             else:
