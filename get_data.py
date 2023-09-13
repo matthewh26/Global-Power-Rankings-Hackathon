@@ -82,12 +82,12 @@ def get_league(league_id):
             return league_name
     return "other"
 
-def get_game_info(match, tournament,stage, league_id):
+def get_game_info(game_df, match, tournament,stage, league_id):
     
     game_info = match[0]
     game_end = match[-1]
     #game_id = int((game_end["gameName"]).split("|")[0])                 
-    game = pd.DataFrame()
+    game = game_df
     
     start_time = convert_time_to_seconds(game_info["eventTime"])
     #print(start_time)
@@ -106,14 +106,14 @@ def get_game_info(match, tournament,stage, league_id):
     roles = ["top","jng","mid","adc","sup","top","jng","mid","adc","sup"]
     
     for player,role in zip(participants,roles):
-        summonerName =player["summonerName"].split(" ")
-        team_tag = summonerName.pop(0)
-        player_name = " ".join(summonerName)
+        #summonerName =player["summonerName"].split(" ")
+        #team_tag = summonerName.pop(0)
+        player_name = player["summonerName"]
         if player["teamID"]==100:
             side = "blue"
         else:
             side = "red"
-        game[f"{side}_team"]= [team_tag]
+        #game[f"{side}_team"]= [team_tag]
         game[f"{side}_{role}"]= [player_name]
     game["stage"]=[stage]
     if game_end["winningTeam"]== 100:
@@ -221,6 +221,7 @@ def download_games(year, df):
     for tournament in tournaments_data:
         if os.path.isfile(f"tournaments/{tournament['slug']}.csv"):
              continue
+        
         df = pd.DataFrame()
         start_date = tournament.get("startDate", "")
         if start_date.startswith(str(year)):
@@ -234,6 +235,7 @@ def download_games(year, df):
                 for section in stage["sections"]:
                     for match in section["matches"]:
                         best_of = match["strategy"]["count"]
+                        
                         for game in match["games"]:
                              if game["state"] == "completed":
                                 try:
@@ -243,8 +245,18 @@ def download_games(year, df):
                                     continue
                                 print(platform_game_id)
                                 #download_gzip_and_write_to_json(f"games/{platform_game_id}",f"{directory}/{platform_game_id}")
+                                
+                                blue_team_id = str(game["teams"][0]["id"])
+                                red_team_id = str(game["teams"][0]["id"])
+                                #print(blue_team_id)
+                                #print(red_team_id)
+                                game_data = pd.DataFrame()
+                                game_data["blue_team"]= [blue_team_id]
+                                game_data["red_team"]= [red_team_id]
+                                #print(game_data["blue_team"])
                                 match_json = download_gzip_and_parse_json(f"games/{platform_game_id}")
-                                game_data = get_game_info(match_json,tournament_slug,stage_name, league_id)
+                                game_data = get_game_info(game_data, match_json,tournament_slug,stage_name, league_id)
+                                
                                 game_data["best_of"] =best_of
                                 game_data["tournament"] = tournament_slug
                                 game_data= get_status_updates(match_json,game_data)
@@ -260,25 +272,33 @@ def download_games(year, df):
                                         f"----- Processed {game_counter} games, current run time: "
                                         f"{round((time.time() - start_time)/60, 2)} minutes")
         
-        df.to_csv(f"tournaments/{tournament['slug']}.csv",index=False)                            
+        df.to_csv(f"tournaments/{tournament['slug']}.csv",index=False)
+        with open('tournaments/league_names.json', 'w') as f:
+            json.dump(league_names, f)                            
         print(f"Completed {tournament['slug']}")
         
 if __name__ == "__main__":
-    league_names = {}
-    df = pd.DataFrame()
-    download_esports_files()
-    with open("esports-data/leagues.json", "r") as json_file:
+    while True:
+        try:
+            if os.path.isfile("tournaments/league_names.json"):
+                with open('league_names.json', 'r') as f:
+                    league_names= json.load(f)
+            else:
+                league_names = {}
+                
+            df = pd.DataFrame()
+            download_esports_files()
+            
+            with open("esports-data/leagues.json", "r") as json_file:
                 leagues_json = json.load(json_file)
-    download_games(2023,df)
-    download_games(2022,df)
-    #download_games(2021)
-    #download_games(2020)
-    
-    # for index, row in df.iterrows():
-    #     for side in ["blue","red"]:
-    #         if row[f"{side}_league"] == None:
-    #             row[f"{side}_league"] = league_names[row[f"{side}_team"]]
-    
-    #df = df.sort_values(by =["date", "start_time"])
-    #df.reset_index(drop=True, inplace=True)
-    #df.to_csv("raw_data22/23.csv",index=False)
+                
+            download_games(2023,df)
+            download_games(2022,df)
+            #download_games(2021)
+            #download_games(2020)
+            break # stop the loop if the function completes sucessfully
+        except Exception as e:
+            print(e)
+            print("Retrying in 15 sec ")
+            time.sleep(15)
+        
