@@ -86,7 +86,7 @@ def get_game_info(match, tournament,stage, league_id):
     
     game_info = match[0]
     game_end = match[-1]
-    game_id = int((game_end["gameName"]).split("|")[0])                 
+    #game_id = int((game_end["gameName"]).split("|")[0])                 
     game = pd.DataFrame()
     
     start_time = convert_time_to_seconds(game_info["eventTime"])
@@ -215,8 +215,13 @@ def download_games(year, df):
     }
 
     game_counter = 0
+    if not os.path.exists("tournaments"):
+        os.makedirs("tournaments")
 
     for tournament in tournaments_data:
+        if os.path.isfile(f"tournaments/{tournament['slug']}.csv"):
+             continue
+        df = pd.DataFrame()
         start_date = tournament.get("startDate", "")
         if start_date.startswith(str(year)):
             tournament_slug = tournament['slug']
@@ -236,7 +241,7 @@ def download_games(year, df):
                                 except KeyError:
                                     print(f"{game['id']} not found in the mapping table")
                                     continue
-
+                                print(platform_game_id)
                                 #download_gzip_and_write_to_json(f"games/{platform_game_id}",f"{directory}/{platform_game_id}")
                                 match_json = download_gzip_and_parse_json(f"games/{platform_game_id}")
                                 game_data = get_game_info(match_json,tournament_slug,stage_name, league_id)
@@ -253,8 +258,9 @@ def download_games(year, df):
                                 if game_counter % 10 == 0:
                                     print(
                                         f"----- Processed {game_counter} games, current run time: "
-                                        f"{round((time.time() - start_time)/60, 2)} minutes"
-                                    )
+                                        f"{round((time.time() - start_time)/60, 2)} minutes")
+        
+        df.to_csv(f"tournaments/{tournament['slug']}.csv",index=False)                            
         print(f"Completed {tournament['slug']}")
         
 if __name__ == "__main__":
@@ -268,11 +274,11 @@ if __name__ == "__main__":
     #download_games(2021)
     #download_games(2020)
     
-    for index, row in df.iterrows():
-        for side in ["blue","red"]:
-            if row[f"{side}_league"] == None:
-                row[f"{side}_league"] = league_names[row[f"{side}_team"]]
+    # for index, row in df.iterrows():
+    #     for side in ["blue","red"]:
+    #         if row[f"{side}_league"] == None:
+    #             row[f"{side}_league"] = league_names[row[f"{side}_team"]]
     
-    df = df.sort_values(by =["date", "start_time"])
-    df.reset_index(drop=True, inplace=True)
-    df.to_csv("raw_data22/23.csv",index=False)
+    #df = df.sort_values(by =["date", "start_time"])
+    #df.reset_index(drop=True, inplace=True)
+    #df.to_csv("raw_data22/23.csv",index=False)
