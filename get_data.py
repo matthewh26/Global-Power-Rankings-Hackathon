@@ -270,16 +270,22 @@ def download_games(year, df):
                                     print(e)
                                     print("skipping game ")
                                     continue
+                                # KeyError
+                                except KeyError as e:
+                                    print(e)
+                                    print(type(e))
+                                    print("skipping game ")
+                                    continue
 
                                 if game_counter % 10 == 0:
                                     print(
                                         f"----- Processed {game_counter} games, current run time: "
                                         f"{round((time.time() - start_time)/60, 2)} minutes")
         
-        df.to_csv(f"tournaments/{tournament['slug']}.csv",index=False)
-        with open('league_names.json', 'w') as f:
-            json.dump(league_names, f)                            
-        print(f"Completed {tournament['slug']}")
+            df.to_csv(f"tournaments/{tournament['slug']}.csv",index=False)
+            with open('league_names.json', 'w') as f:
+                json.dump(league_names, f)                            
+            print(f"Completed {tournament['slug']}")
         
 if __name__ == "__main__":
     while True:
